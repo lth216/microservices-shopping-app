@@ -25,10 +25,11 @@ COPY . .
 ARG SKAFFOLD_GO_GCFLAGS
 RUN CGO_ENABLED=0 GOOS=linux go build -gcflags="${SKAFFOLD_GO_GCFLAGS}" -o /checkoutservice .
 
-FROM scratch
+FROM alpine:3.14
 
+RUN adduser --home /home/checkoutservice --shell /bin/bash --disabled-password --gecos "" checkoutservice
 WORKDIR /src
-COPY --from=builder /checkoutservice /src/checkoutservice
+COPY --from=builder --chown=checkoutservice. /checkoutservice /src/checkoutservice
 
 # Definition of this variable is used by 'skaffold debug' to identify a golang binary.
 # Default behavior - a failure prints a stack trace for the current goroutine.
@@ -36,4 +37,5 @@ COPY --from=builder /checkoutservice /src/checkoutservice
 ENV GOTRACEBACK=single
 
 EXPOSE 5050
+USER checkoutservice
 ENTRYPOINT ["/src/checkoutservice"]

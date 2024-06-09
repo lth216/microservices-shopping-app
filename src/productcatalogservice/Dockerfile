@@ -24,16 +24,17 @@ COPY . .
 ARG SKAFFOLD_GO_GCFLAGS
 RUN CGO_ENABLED=0 GOOS=linux go build -gcflags="${SKAFFOLD_GO_GCFLAGS}" -o /productcatalogservice .
 
-FROM scratch
+FROM alpine:3.14
 
 WORKDIR /src
-COPY --from=builder /productcatalogservice ./server
-COPY products.json .
+RUN adduser --home /home/productcatalogservice --shell /bin/bash --disabled-password --gecos "" productcatalogservice
+COPY --from=builder --chown=productcatalogservice. /productcatalogservice ./server
+COPY --chown=productcatalogservice. products.json .
 
 # Definition of this variable is used by 'skaffold debug' to identify a golang binary.
 # Default behavior - a failure prints a stack trace for the current goroutine.
 # See https://golang.org/pkg/runtime/
 ENV GOTRACEBACK=single
-
+USER productcatalogservice
 EXPOSE 3550
 ENTRYPOINT ["/src/server"]

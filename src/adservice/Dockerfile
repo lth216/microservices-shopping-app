@@ -27,7 +27,8 @@ RUN ./gradlew installDist
 
 FROM eclipse-temurin:21.0.3_9-jre-alpine@sha256:23467b3e42617ca197f43f58bc5fb03ca4cb059d68acd49c67128bfded132d67
 
-RUN apk add --no-cache ca-certificates
+RUN apk add --no-cache ca-certificates\
+    && adduser --home /home/adservice --shell /bin/bash --disabled-password --gecos "" adservice
 
 # @TODO: https://github.com/GoogleCloudPlatform/microservices-demo/issues/2517
 # Download Stackdriver Profiler Java agent
@@ -37,7 +38,7 @@ RUN apk add --no-cache ca-certificates
 #     rm -rf profiler_java_agent.tar.gz
 
 WORKDIR /app
-COPY --from=builder /app .
-
+COPY --from=builder --chown=adservice. /app .
+USER adservice
 EXPOSE 9555
 ENTRYPOINT ["/app/build/install/hipstershop/bin/AdService"]

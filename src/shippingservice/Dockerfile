@@ -24,10 +24,11 @@ COPY . .
 ARG SKAFFOLD_GO_GCFLAGS
 RUN CGO_ENABLED=0 GOOS=linux go build -gcflags="${SKAFFOLD_GO_GCFLAGS}" -o /go/bin/shippingservice .
 
-FROM scratch
+FROM alpine:3.14
 
 WORKDIR /src
-COPY --from=builder /go/bin/shippingservice /src/shippingservice
+RUN adduser --home /home/shippingservice --shell /bin/bash --disabled-password --gecos "" shippingservice
+COPY --from=builder --chown=shippingservice:shippingservice /go/bin/shippingservice /src/shippingservice
 ENV APP_PORT=50051
 
 # Definition of this variable is used by 'skaffold debug' to identify a golang binary.

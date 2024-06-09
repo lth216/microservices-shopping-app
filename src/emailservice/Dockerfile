@@ -33,11 +33,15 @@ ENV ENABLE_PROFILER=1
 
 WORKDIR /email_server
 
+RUN useradd -m -U -s /bin/bash emailservice
+
 # Grab packages from builder
 COPY --from=builder /usr/local/lib/python3.12/ /usr/local/lib/python3.12/
 
 # Add the application
-COPY . .
+COPY --chown=emailservice:emailservice . .
+
+USER emailservice
 
 EXPOSE 8080
 ENTRYPOINT [ "python", "email_server.py" ]

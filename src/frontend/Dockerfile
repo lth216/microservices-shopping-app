@@ -24,11 +24,14 @@ COPY . .
 ARG SKAFFOLD_GO_GCFLAGS
 RUN CGO_ENABLED=0 GOOS=linux go build -gcflags="${SKAFFOLD_GO_GCFLAGS}" -o /go/bin/frontend .
 
-FROM scratch
+FROM alpine:3.14
 WORKDIR /src
-COPY --from=builder /go/bin/frontend /src/server
-COPY ./templates ./templates
-COPY ./static ./static
+
+RUN adduser --home /home/frontend --shell /bin/bash --disabled-password --gecos "" frontend
+
+COPY --from=builder --chown=frontend. /go/bin/frontend ./server
+COPY --chown=frontend. ./templates ./templates
+COPY --chown=frontend. ./static ./static
 
 # Definition of this variable is used by 'skaffold debug' to identify a golang binary.
 # Default behavior - a failure prints a stack trace for the current goroutine.
@@ -36,4 +39,5 @@ COPY ./static ./static
 ENV GOTRACEBACK=single
 
 EXPOSE 8080
+USER frontend
 ENTRYPOINT ["/src/server"]

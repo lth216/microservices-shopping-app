@@ -32,12 +32,15 @@ ENV PYTHONUNBUFFERED=1
 # get packages
 WORKDIR /recommendationservice
 
+RUN useradd -m -U -s /bin/bash recommendationservice
+
 # Grab packages from builder
 COPY --from=builder /usr/local/lib/python3.12/ /usr/local/lib/python3.12/
 
 # Add the application
-COPY . .
+COPY --chown=recommendationservice. . .
 
+USER recommendationservice
 # set listen port
 ENV PORT "8080"
 EXPOSE 8080
