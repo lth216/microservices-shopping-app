@@ -29,16 +29,16 @@ RUN npm install --only=production
 
 FROM alpine:3.20.0@sha256:77726ef6b57ddf65bb551896826ec38bc3e53f75cdde31354fbffb4f25238ebd
 
-RUN apk add --no-cache nodejs &&\
-    adduser --home /home/paymentservice --shell /bin/bash --disabled-password --gecos "" paymentservice
+RUN apk add --no-cache nodejs wget \
+    && GRPC_HEALTH_PROBE_VERSION=v0.4.13 \
+    && wget -qO/bin/grpc_health_probe https://github.com/grpc-ecosystem/grpc-health-probe/releases/download/${GRPC_HEALTH_PROBE_VERSION}/grpc_health_probe-linux-amd64 \
+    && chmod +x /bin/grpc_health_probe
 
 WORKDIR /usr/src/app
 
-COPY --from=builder --chown=paymentservice:paymentservice /usr/src/app/node_modules ./node_modules
+COPY --from=builder /usr/src/app/node_modules ./node_modules
 
-COPY --chown=paymentservice:paymentservice . .
-
-USER paymentservice
+COPY . .
 
 EXPOSE 50051
 

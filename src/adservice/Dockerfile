@@ -27,8 +27,10 @@ RUN ./gradlew installDist
 
 FROM eclipse-temurin:21.0.3_9-jre-alpine@sha256:23467b3e42617ca197f43f58bc5fb03ca4cb059d68acd49c67128bfded132d67
 
-RUN apk add --no-cache ca-certificates\
-    && adduser --home /home/adservice --shell /bin/bash --disabled-password --gecos "" adservice
+RUN apk add --no-cache ca-certificates wget \
+    && GRPC_HEALTH_PROBE_VERSION=v0.4.13 \
+    && wget -qO /bin/grpc_health_probe https://github.com/grpc-ecosystem/grpc-health-probe/releases/download/${GRPC_HEALTH_PROBE_VERSION}/grpc_health_probe-linux-amd64 \
+    && chmod +x /bin/grpc_health_probe
 
 # @TODO: https://github.com/GoogleCloudPlatform/microservices-demo/issues/2517
 # Download Stackdriver Profiler Java agent
@@ -38,7 +40,6 @@ RUN apk add --no-cache ca-certificates\
 #     rm -rf profiler_java_agent.tar.gz
 
 WORKDIR /app
-COPY --from=builder --chown=adservice. /app .
-USER adservice
+COPY --from=builder /app .
 EXPOSE 9555
 ENTRYPOINT ["/app/build/install/hipstershop/bin/AdService"]

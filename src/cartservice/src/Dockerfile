@@ -34,11 +34,10 @@ FROM mcr.microsoft.com/dotnet/runtime-deps:8.0.6-noble-chiseled@sha256:1745aa8e3
 
 WORKDIR /app
 
-COPY --from=builder --chown=cartservice. /cartservice .
+COPY --from=builder /cartservice .
 
 EXPOSE 7070
 ENV DOTNET_EnableDiagnostics=0 \
     ASPNETCORE_HTTP_PORTS=7070
 
-USER cartservice
 ENTRYPOINT ["/app/cartservice"]

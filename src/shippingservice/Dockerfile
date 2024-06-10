@@ -26,9 +26,13 @@ RUN CGO_ENABLED=0 GOOS=linux go build -gcflags="${SKAFFOLD_GO_GCFLAGS}" -o /go/b
 
 FROM alpine:3.14
 
+RUN apk add --no-cache wget \
+    && GRPC_HEALTH_PROBE_VERSION=v0.4.13 \
+    && wget -qO/bin/grpc_health_probe https://github.com/grpc-ecosystem/grpc-health-probe/releases/download/${GRPC_HEALTH_PROBE_VERSION}/grpc_health_probe-linux-amd64 \
+    && chmod +x /bin/grpc_health_probe
+
 WORKDIR /src
-RUN adduser --home /home/shippingservice --shell /bin/bash --disabled-password --gecos "" shippingservice
-COPY --from=builder --chown=shippingservice:shippingservice /go/bin/shippingservice /src/shippingservice
+COPY --from=builder /go/bin/shippingservice /src/shippingservice
 ENV APP_PORT=50051
 
 # Definition of this variable is used by 'skaffold debug' to identify a golang binary.

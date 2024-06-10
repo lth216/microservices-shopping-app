@@ -31,17 +31,19 @@ ENV PYTHONUNBUFFERED=1
 # Enable Profiler
 ENV ENABLE_PROFILER=1
 
-WORKDIR /email_server
+RUN apt-get -qq update && apt-get install -y --no-install-recommends wget \
+    && rm -rf /var/lib/apt/lists/* \
+    && GRPC_HEALTH_PROBE_VERSION=v0.4.13 \
+    && wget -qO/bin/grpc_health_probe https://github.com/grpc-ecosystem/grpc-health-probe/releases/download/${GRPC_HEALTH_PROBE_VERSION}/grpc_health_probe-linux-amd64 \
+    && chmod +x /bin/grpc_health_probe
 
-RUN useradd -m -U -s /bin/bash emailservice
+WORKDIR /email_server
 
 # Grab packages from builder
 COPY --from=builder /usr/local/lib/python3.12/ /usr/local/lib/python3.12/
 
 # Add the application
-COPY --chown=emailservice:emailservice . .
-
-USER emailservice
+COPY . .
 
 EXPOSE 8080
 ENTRYPOINT [ "python", "email_server.py" ]

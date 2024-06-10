@@ -27,14 +27,18 @@ RUN CGO_ENABLED=0 GOOS=linux go build -gcflags="${SKAFFOLD_GO_GCFLAGS}" -o /prod
 FROM alpine:3.14
 
 WORKDIR /src
-RUN adduser --home /home/productcatalogservice --shell /bin/bash --disabled-password --gecos "" productcatalogservice
-COPY --from=builder --chown=productcatalogservice. /productcatalogservice ./server
-COPY --chown=productcatalogservice. products.json .
+
+RUN apk add --no-cache wget \
+    && GRPC_HEALTH_PROBE_VERSION=v0.4.13 \
+    && wget -qO/bin/grpc_health_probe https://github.com/grpc-ecosystem/grpc-health-probe/releases/download/${GRPC_HEALTH_PROBE_VERSION}/grpc_health_probe-linux-amd64 \
+    && chmod +x /bin/grpc_health_probe
+
+COPY --from=builder /productcatalogservice ./server
+COPY products.json .
 
 # Definition of this variable is used by 'skaffold debug' to identify a golang binary.
 # Default behavior - a failure prints a stack trace for the current goroutine.
 # See https://golang.org/pkg/runtime/
 ENV GOTRACEBACK=single
-USER productcatalogservice
 EXPOSE 3550
 ENTRYPOINT ["/src/server"]

@@ -27,9 +27,13 @@ RUN CGO_ENABLED=0 GOOS=linux go build -gcflags="${SKAFFOLD_GO_GCFLAGS}" -o /chec
 
 FROM alpine:3.14
 
-RUN adduser --home /home/checkoutservice --shell /bin/bash --disabled-password --gecos "" checkoutservice
+RUN apk add --no-cache wget \
+    && GRPC_HEALTH_PROBE_VERSION=v0.4.13 \
+    && wget -qO/bin/grpc_health_probe https://github.com/grpc-ecosystem/grpc-health-probe/releases/download/${GRPC_HEALTH_PROBE_VERSION}/grpc_health_probe-linux-amd64 \
+    && chmod +x /bin/grpc_health_probe
+
 WORKDIR /src
-COPY --from=builder --chown=checkoutservice. /checkoutservice /src/checkoutservice
+COPY --from=builder /checkoutservice /src/checkoutservice
 
 # Definition of this variable is used by 'skaffold debug' to identify a golang binary.
 # Default behavior - a failure prints a stack trace for the current goroutine.
@@ -37,5 +41,4 @@ COPY --from=builder --chown=checkoutservice. /checkoutservice /src/checkoutservi
 ENV GOTRACEBACK=single
 
 EXPOSE 5050
-USER checkoutservice
 ENTRYPOINT ["/src/checkoutservice"]

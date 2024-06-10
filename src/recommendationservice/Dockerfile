@@ -32,15 +32,18 @@ ENV PYTHONUNBUFFERED=1
 # get packages
 WORKDIR /recommendationservice
 
-RUN useradd -m -U -s /bin/bash recommendationservice
+RUN apt-get -qq update && apt-get install -y --no-install-recommends wget \
+    && rm -rf /var/lib/apt/lists/* \
+    && GRPC_HEALTH_PROBE_VERSION=v0.4.13 \
+    && wget -qO/bin/grpc_health_probe https://github.com/grpc-ecosystem/grpc-health-probe/releases/download/${GRPC_HEALTH_PROBE_VERSION}/grpc_health_probe-linux-amd64 \
+    && chmod +x /bin/grpc_health_probe
 
 # Grab packages from builder
 COPY --from=builder /usr/local/lib/python3.12/ /usr/local/lib/python3.12/
 
 # Add the application
-COPY --chown=recommendationservice. . .
+COPY . .
 
-USER recommendationservice
 # set listen port
 ENV PORT "8080"
 EXPOSE 8080
