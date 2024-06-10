@@ -1,0 +1,114 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: shopping-app
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend-dp
+  namespace: shopping-app
+  annotations:
+    deployment.kubernetes.io/revision: "2"
+    kubernetes.io/change-cause: "Beta version 0.0.2"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+      - name: frontend
+        image: longtruong2106/frontend:beta-0.0.2
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
+        env:
+        - name: PORT
+          value: "8080"
+        - name: ENABLE_PROFILER
+          value: "0"
+        - name: ENABLE_TRACING
+          value: "0"
+        - name: PRODUCT_CATALOG_SERVICE_ADDR
+          value: "productcatalogservice-svc:3550"
+        - name: SHIPPING_SERVICE_ADDR
+          value: "shippingservice-svc:50051"
+        - name: CART_SERVICE_ADDR
+          value: "cartservice-svc:7070"
+        - name: CURRENCY_SERVICE_ADDR
+          value: "currencyservice-svc:50051"
+        - name: EMAIL_SERVICE_ADDR
+          value: "emailservice-svc:8080"
+        - name: PAYMENT_SERVICE_ADDR
+          value: "paymentservice-svc:50051"
+        - name: CHECKOUT_SERVICE_ADDR
+          value: "checkoutservice-svc:5050"
+        - name: RECOMMENDATION_SERVICE_ADDR
+          value: "recommendationservice-svc:8080"
+        - name: AD_SERVICE_ADDR
+          value: "adservice-svc:9555"
+        - name: SHOPPING_ASSISTANT_SERVICE_ADDR
+          value: "null:null"
+        livenessProbe:
+          initialDelaySeconds: 30
+          periodSeconds: 5
+          tcpSocket:
+            port: 8080
+        readinessProbe:
+          initialDelaySeconds: 30
+          periodSeconds: 5
+          tcpSocket:
+            port: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend-svc
+  namespace: shopping-app
+spec:
+  selector:
+    app: frontend
+  ports:
+  - port: 8080
+    targetPort: 8080
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: frontend-cert
+  namespace: shopping-app
+spec:
+  issuerRef:
+    name: selfsigned-cluster-issuer
+    kind: ClusterIssuer
+  secretName: frontend-cert-secret
+  dnsNames:
+  - longtruong-lab.online
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+    name: frontend-ingress
+    namespace: shopping-app
+spec:
+  tls:
+  - hosts:
+    - longtruong-lab.online
+    secretName: frontend-cert-secret
+  ingressClassName: nginx
+  rules:
+    - host: longtruong-lab.online
+      http:
+        paths:
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: frontend-svc
+              port:
+                number: 8080 

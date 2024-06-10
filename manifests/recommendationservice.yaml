@@ -1,0 +1,60 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: shopping-app
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: recommendationservice-dp
+  namespace: shopping-app
+  annotations:
+    deployment.kubernetes.io/revision: "2"
+    kubernetes.io/change-cause: "Beta version 0.0.2"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: recommendationservice
+  template:
+    metadata:
+      labels:
+        app: recommendationservice
+    spec:
+      containers:
+      - name: recommendationservice
+        image: longtruong2106/recommendationservice:beta-0.0.2
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
+        env:
+        - name: PORT
+          value: "8080"
+        - name: DISABLE_PROFILER
+          value: "1"
+        - name: ENABLE_TRACING
+          value: "0"
+        - name: PRODUCT_CATALOG_SERVICE_ADDR
+          value: "productcatalogservice-svc:3550"
+        livenessProbe:
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          exec:
+            command: ["/bin/grpc_health_probe", "-addr=:8080"]
+        readinessProbe:
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          exec:
+            command: ["/bin/grpc_health_probe", "-addr=:8080"]
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: recommendationservice-svc
+  namespace: shopping-app
+spec:
+  selector:
+    app: recommendationservice
+  ports:
+  - port: 8080
+    targetPort: 8080
